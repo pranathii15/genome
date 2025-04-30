@@ -1,0 +1,61 @@
+import pandas as pd
+import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+import joblib
+from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import MultiOutputClassifier
+
+model = MultiOutputClassifier(LogisticRegression(max_iter=1000, class_weight='balanced'))
+
+# 1. Load the dataset
+print("Loading dataset...")
+df = pd.read_csv("CMK.hg19.AllInteractions.SP4.FDR0.001.xls", sep="\t")
+
+# 2. Define target and feature columns
+target_columns = [
+    'CG1_p_value', 'CG2_p_value', 'CC1_p_value',
+    'CC2_p_value', 'CN1_p_value', 'CN2_p_value'
+]
+
+feature_columns = [
+    'Feature_Start', 'Interactor_Start', 'Interactor_End', 'distance',
+    'CG1_SuppPairs', 'CG2_SuppPairs', 'CC1_SuppPairs', 'CC2_SuppPairs',
+    'CN1_SuppPairs', 'CN2_SuppPairs',
+    'Normal', 'CarboplatinTreated', 'GemcitabineTreated'
+]
+
+# 3. Prepare the data
+print("Preparing data...")
+X = df[feature_columns]
+y = df[target_columns]
+
+# Drop rows with missing values
+X = X.dropna()
+y = y.loc[X.index]
+
+# Convert p-values to binary (1 = significant if <= 0.0005, else 0)
+threshold = 0.0005
+y_binary = (y <= threshold).astype(int)
+
+# 4. Split the data
+X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
+
+# 5. Scale the features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+# 6. Train the model
+print("Training the model...")
+model = MultiOutputClassifier(LogisticRegression(max_iter=1000, random_state=42))
+model.fit(X_train_scaled, y_train)
+
+# 7. Save the model and scaler
+print("Saving model and scaler...")
+joblib.dump(model, 'model.pkl')
+joblib.dump(scaler, 'scaler.pkl')
+
+print("✅ Model and scaler saved successfully!")

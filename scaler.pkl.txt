@@ -1,0 +1,25 @@
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+import joblib
+
+# Example: Load your training dataset
+# Replace 'your_dataset.csv' with your actual data file
+df = pd.read_csv('your_dataset.csv')
+
+# Replace these with your actual feature column names
+feature_columns = [
+    'Feature_Start', 'Interactor_Start', 'Interactor_End', 'distance', 
+    'CG1_SuppPairs', 'CG2_SuppPairs', 'CC1_SuppPairs', 'CC2_SuppPairs',
+    'CN1_SuppPairs', 'CN2_SuppPairs', 'Normal', 'CarboplatinTreated', 'GemcitabineTreated'
+]
+
+X = df[feature_columns]
+
+# Create and fit the scaler
+scaler = StandardScaler()
+scaler.fit(X)
+
+# Save the scaler to a .pkl file
+joblib.dump(scaler, 'scaler.pkl')
+
+print("✅ Scaler saved as scaler.pkl")
