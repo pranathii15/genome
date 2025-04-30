@@ -1,0 +1,24 @@
+import matplotlib.pyplot as plt
+
+# Algorithms and their accuracy scores
+algorithms = ['Logistic Regression', 'SVM', 'Decision Tree', 'KNN', 'Naive Bayes']
+accuracy_scores = [85.7, 81.5, 78.2, 74.3, 69.8]
+
+plt.figure(figsize=(10, 6))
+
+# Creating bar chart
+bars = plt.bar(algorithms, accuracy_scores, color=['blue', 'green', 'orange', 'purple', 'red'])
+
+# Adding title and labels
+plt.title('Algorithm Accuracy Comparison', fontsize=16)
+plt.xlabel('Algorithms', fontsize=14)
+plt.ylabel('Accuracy (%)', fontsize=14)
+plt.ylim(0, 100)  # Accuracy always between 0-100
+
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2.0, height - 5, f'{height}%', ha='center', va='bottom', color='white', fontsize=12)
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()

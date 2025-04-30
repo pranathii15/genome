@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Genomic Interaction Predictor</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #f3e7e9, #e3eeff);
+      padding: 30px;
+      text-align: center;
+      position: relative;
+    }
+    h1 {
+      color: #333;
+    }
+    .names {
+      font-weight: bold;
+      color: #555;
+      margin-top: -10px;
+      margin-bottom: 30px;
+    }
+    form {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 15px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    input[type="number"] {
+      padding: 8px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    .btn {
+      grid-column: span 2;
+      background-color: #007bff;
+      color: white;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    img {
+      width: 200px;
+      margin: 20px;
+    }
+    .top-left-img {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      width: 120px;
+      height: auto;
+      border-radius: 8px;
+    }
+    #predictionBox {
+      margin-top: 30px;
+      padding: 20px;
+      background-color: #f1f1f1;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Left Image -->
+  <img class="top-left-img" src="C:/Users/mpran/Desktop/gnits.jpg" alt="GNITS Logo">
+
+  <h1>🔬 Genomic Interaction Significance Predictor</h1>
+  <p>Predict if a chromatin interaction is statistically significant (PPR-2025)</p>
+  <div class="names">By Rasheeda (5L4), Pranathi (5M2), Pavani (5R0)</div>
+
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa_wtrh03bBHUHvmOgyPjy6S5bvhGph_nmAA&s" alt="Genome Image">
+
+  <form id="predictForm">
+    {% for col in ['Feature_Start', 'Interactor_Start', 'Interactor_End', 'distance', 
+                   'CG1_SuppPairs', 'CG2_SuppPairs', 'CC1_SuppPairs', 'CC2_SuppPairs',
+                   'CN1_SuppPairs', 'CN2_SuppPairs', 'Normal', 'CarboplatinTreated', 'GemcitabineTreated'] %}
+      <input type="number" step="any" name="{{ col }}" placeholder="{{ col }}" required>
+    {% endfor %}
+    <button class="btn" type="submit">Predict</button>
+  </form>
+
+  <div id="predictionBox">
+    <h3>Prediction Result</h3>
+    <p id="prediction"></p>
+    <p id="accuracy"></p>
+  </div>
+
+  <script>
+    const form = document.getElementById('predictForm');
+    const predictionBox = document.getElementById('predictionBox');
+    const predictionText = document.getElementById('prediction');
+    const accuracyText = document.getElementById('accuracy');
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault(); // Prevent page reload
+
+      const formData = new FormData(form);
+      const data = new URLSearchParams();
+      for (const pair of formData) {
+        data.append(pair[0], pair[1]);
+      }
+
+      try {
+        const response = await fetch('/predict', {
+          method: 'POST',
+          body: data
+        });
+        const result = await response.json();
+
+        predictionText.textContent = 'Prediction: ' + result.prediction;
+        accuracyText.textContent = 'Accuracy: ' + result.accuracy + '%';
+        predictionBox.style.display = 'block';
+      } catch (error) {
+        alert('Error predicting: ' + error);
+      }
+    });
+  </script>
+</body>
+</html>
+

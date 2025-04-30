@@ -1,0 +1,23 @@
+import matplotlib.pyplot as plt
+
+# Algorithm and its accuracy
+algorithm = ['Logistic Regression']
+accuracy = [85.7]
+plt.figure(figsize=(6, 6))
+
+# Creating bar chart
+bars = plt.bar(algorithm, accuracy, color='blue')
+
+# Adding title and labels
+plt.title('Logistic Regression Model Accuracy', fontsize=16)
+plt.xlabel('Algorithm', fontsize=14)
+plt.ylabel('Accuracy (%)', fontsize=14)
+plt.ylim(0, 100)  # Accuracy between 0 and 100
+
+for bar in bars:
+    height = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width() / 2.0, height - 5, f'{height}%', ha='center', va='bottom', color='white', fontsize=12)
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.show()
