@@ -64,6 +64,7 @@ def predict():
         model = joblib.load('model.pkl')
         prediction = model.predict(input_df)[0]
         result = "Yes" if any(prediction) else "No"
+        return render_template("index.html", prediction=result)
 
         # Optional: return more detail
         accuracy = 94.2  # static or calculated
