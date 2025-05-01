@@ -85,12 +85,15 @@
     {% endfor %}
     <button class="btn" type="submit">Predict</button>
   </form>
+  {% if prediction %}
 
   <div id="predictionBox">
     <h3>Prediction Result</h3>
     <p id="prediction"></p>
+    <p>{{ prediction }}</p>
     <p id="accuracy"></p>
   </div>
+  {% endif %}
 
   <script>
     const form = document.getElementById('predictForm');
