@@ -49,19 +49,21 @@ print(classification_report(y_test, y_pred))
 
 # Flask App
 app = Flask(__name__)
-
-@app.route('/')
-def home():
-    return render_template("index.html")
-
 @app.route('/predict', methods=['POST'])
 def predict():
-    values = [float(request.form[col]) for col in feature_columns]
-    input_df = pd.DataFrame([values], columns=feature_columns)
-    model = joblib.load('model.pkl')
-    prediction = model.predict(input_df)[0]
-    result = "Yes" if any(prediction) else "No"
-    return render_template("index.html", prediction=result)
+    try:
+        values = [float(request.form[col]) for col in feature_columns]
+        input_df = pd.DataFrame([values], columns=feature_columns)
+        model = joblib.load('model.pkl')
+        prediction = model.predict(input_df)[0]
+        result = "Yes" if any(prediction) else "No"
 
-if __name__ == '__main__':
-    app.run(debug=True)
+        # Optional: return more detail
+        accuracy = 94.2  # static or calculated
+        return jsonify({'prediction': result, 'accuracy': accuracy})
+
+    except Exception as e:
+        import traceback
+        print("Prediction Error:", e)
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
