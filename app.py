@@ -8,7 +8,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import joblib
 from flask import Flask, request, render_template
-from flask import Flask, render_template
 
 app = Flask(__name__)
 
