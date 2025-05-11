@@ -44,18 +44,6 @@
     .btn:hover {
       background-color: #0056b3;
     }
-    img {
-      width: 200px;
-      margin: 20px;
-    }
-    .top-left-img {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      width: 120px;
-      height: auto;
-      border-radius: 8px;
-    }
     #predictionBox {
       margin-top: 30px;
       padding: 20px;
@@ -68,32 +56,34 @@
 </head>
 <body>
 
-  <!-- Top Left Image -->
-  <img class="top-left-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTZOfmxPMdQR-YsQQzIKeAry2Do_uK1Xq1ZVA&s" alt="GNITS Logo">
-
   <h1>🔬 Genomic Interaction Significance Predictor</h1>
   <p>Predict if a chromatin interaction is statistically significant (PPR-2025)</p>
   <div class="names">By Rasheeda (5L4), Pranathi (5M2), Pavani (5R0)</div>
 
-  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTa_wtrh03bBHUHvmOgyPjy6S5bvhGph_nmAA&s" alt="Genome Image">
-
+  <!-- Form Inputs Directly in HTML -->
   <form id="predictForm">
-    {% for col in ['Feature_Start', 'Interactor_Start', 'Interactor_End', 'distance', 
-                   'CG1_SuppPairs', 'CG2_SuppPairs', 'CC1_SuppPairs', 'CC2_SuppPairs',
-                   'CN1_SuppPairs', 'CN2_SuppPairs', 'Normal', 'CarboplatinTreated', 'GemcitabineTreated'] %}
-      <input type="number" step="any" name="{{ col }}" placeholder="{{ col }}" required>
-    {% endfor %}
+    <input type="number" step="any" name="Feature_Start" placeholder="Feature_Start" required>
+    <input type="number" step="any" name="Interactor_Start" placeholder="Interactor_Start" required>
+    <input type="number" step="any" name="Interactor_End" placeholder="Interactor_End" required>
+    <input type="number" step="any" name="distance" placeholder="distance" required>
+    <input type="number" step="any" name="CG1_SuppPairs" placeholder="CG1_SuppPairs" required>
+    <input type="number" step="any" name="CG2_SuppPairs" placeholder="CG2_SuppPairs" required>
+    <input type="number" step="any" name="CC1_SuppPairs" placeholder="CC1_SuppPairs" required>
+    <input type="number" step="any" name="CC2_SuppPairs" placeholder="CC2_SuppPairs" required>
+    <input type="number" step="any" name="CN1_SuppPairs" placeholder="CN1_SuppPairs" required>
+    <input type="number" step="any" name="CN2_SuppPairs" placeholder="CN2_SuppPairs" required>
+    <input type="number" step="any" name="Normal" placeholder="Normal" required>
+    <input type="number" step="any" name="CarboplatinTreated" placeholder="CarboplatinTreated" required>
+    <input type="number" step="any" name="GemcitabineTreated" placeholder="GemcitabineTreated" required>
+
     <button class="btn" type="submit">Predict</button>
   </form>
-  {% if prediction %}
 
   <div id="predictionBox">
     <h3>Prediction Result</h3>
     <p id="prediction"></p>
-    <p>{{ prediction }}</p>
     <p id="accuracy"></p>
   </div>
-  {% endif %}
 
   <script>
     const form = document.getElementById('predictForm');
@@ -121,10 +111,11 @@
         accuracyText.textContent = 'Accuracy: ' + result.accuracy + '%';
         predictionBox.style.display = 'block';
       } catch (error) {
-        alert('Error predicting: ' + error);
+        alert('Error predicting: ' + error.message);
       }
     });
   </script>
+
 </body>
 </html>
 
