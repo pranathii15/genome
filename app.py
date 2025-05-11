@@ -33,7 +33,7 @@ feature_columns = [
 # Clean and prepare data
 X = df[feature_columns].dropna()
 y = df[target_columns].loc[X.index]
-y_binary = (y <= 0.0005).astype(int)
+y_binary = (y <= 0.0005).astype(int)  # Binary conversion based on threshold
 
 # Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
@@ -43,7 +43,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, 
 # =======================
 pipeline = Pipeline([
     ('scaler', StandardScaler()),
-    ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000)))
+    ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000, class_weight='balanced')))
 ])
 
 # Train the model
@@ -83,14 +83,20 @@ def predict():
         # Load the model
         model = joblib.load('model.pkl')
         
-        # Make predictions
-        prediction = model.predict(input_df)[0]
+        # Get the probability of the positive class for each target (multi-output)
+        probabilities = model.predict_proba(input_df)  # Outputs probabilities
         
-        # Determine the result
-        result = "Yes" if any(prediction) else "No"
+        # Define custom threshold for classification (e.g., 0.4)
+        threshold = 0.4  # You can adjust this threshold value
+        
+        # Apply threshold to predict "Yes" (1) or "No" (0) for each target variable
+        prediction = (probabilities[0] >= threshold).astype(int)  # Apply threshold to all outputs
+        
+        # Check if any prediction is "Yes" (1)
+        result = "Yes" if np.any(prediction == 1) else "No"
         
         # Return JSON response to frontend
-        accuracy = 94.2  # Replace with dynamically calculated accuracy if needed
+        accuracy = 94.2  # This is an example, calculate dynamic accuracy if needed
         return jsonify({'prediction': result, 'accuracy': accuracy})
     
     except Exception as e:
@@ -99,8 +105,8 @@ def predict():
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    main()  # Train the model
     app.run(debug=True, host='0.0.0.0', port=5000)  # Run Flask app
+
 
 
 
