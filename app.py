@@ -10,6 +10,7 @@ from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 import traceback
+import os
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -95,14 +96,25 @@ def evaluate_model(grid_search, X_test, y_test):
 # =======================
 @app.route('/')
 def index():
-    return "Model Training and Evaluation is Complete!"
+    return "Model Training and Evaluation is Complete! Please send a POST request to /predict for predictions."
 
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()  # Get JSON data from the request
+        print(f"Received Data: {data}")  # Debugging: print received data
+
+        if 'features' not in data:
+            return jsonify({"error": "Missing 'features' key in the request."})
+
+        # Check if the model file exists
+        if not os.path.exists('best_model.pkl'):
+            return jsonify({"error": "Model file not found. Please train the model first."})
+
         model = joblib.load('best_model.pkl')  # Load the trained model
-        # Assume data needs to be formatted as a list of features
+        print("Model Loaded Successfully!")  # Debugging: print model loading success
+
+        # Assuming 'features' is a list of feature values
         prediction = model.predict([data['features']])
         return jsonify(prediction.tolist())  # Return the prediction as JSON
 
@@ -122,5 +134,6 @@ def main():
 if __name__ == '__main__':
     main()  # Train the model
     app.run(debug=True, host='0.0.0.0', port=5000)  # Run Flask app
+
 
 
