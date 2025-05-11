@@ -77,13 +77,18 @@ print(f"Overall Accuracy: {accuracy * 100:.2f}%")
 # =======================
 
 @app.route('/')
+
+
 def home():
     """
     Renders the main HTML page.
     """
     return render_template("index.html")
 
-
+@app.route('/health')
+def health():
+    return "Application is running!", 200
+    
 @app.route('/predict', methods=['POST'])
 def predict():
     """
@@ -123,9 +128,12 @@ def predict():
 # =======================
 
 
+
 if __name__ == '__main__':
-    port = int(os.getenv("PORT", 5000))  # Use the PORT env variable or default to 5000
+    port = int(os.getenv("PORT", 5000))  # Get the port from the environment variable
+    print(f"🚀 Application starting on port {port}...")  # Log the port number
     app.run(host='0.0.0.0', port=port, debug=True)
+
 
 
 
