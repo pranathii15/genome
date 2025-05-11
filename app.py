@@ -1,26 +1,20 @@
 import pandas as pd
+import numpy as np
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 from flask import Flask, request, render_template, jsonify
-from flask_cors import CORS
 import traceback
-import os
 
-# =======================
-#    Flask App Config
-# =======================
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests
 
 # =======================
 #       LOAD DATA
 # =======================
-print("Loading data and training model...")
 df = pd.read_csv("CMK.hg19.AllInteractions.SP4.FDR0.001.xls", sep="\t")
 
 # Define feature and target columns
@@ -36,85 +30,94 @@ feature_columns = [
     'Normal', 'CarboplatinTreated', 'GemcitabineTreated'
 ]
 
-# Clean and prepare data
-X = df[feature_columns].dropna()
-y = df[target_columns].loc[X.index]
-y_binary = (y <= 0.0005).astype(int)
+# =======================
+#   CLEAN AND SPLIT DATA
+# =======================
+def clean_and_split_data():
+    X = df[feature_columns].dropna()
+    y = df[target_columns].loc[X.index]
+    y_binary = (y <= 0.0005).astype(int)  # Binary conversion based on threshold
 
-# =======================
-#   REPRODUCIBLE SPLIT
-# =======================
-RANDOM_SEED = 42  # Ensuring consistency
-X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=RANDOM_SEED)
+    # Data split
+    X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
+    return X_train, X_test, y_train, y_test
 
 # =======================
 #    MODEL PIPELINE
 # =======================
-pipeline = Pipeline([
-    ('scaler', StandardScaler()),
-    ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000)))
-])
+def train_model(X_train, y_train):
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000)))
+    ])
 
-# Train the model
-pipeline.fit(X_train, y_train)
+    # =======================
+    #     HYPERPARAMETER TUNING
+    # =======================
+    param_grid = {
+        'clf__estimator__C': [0.01, 0.1, 1, 10],  # Regularization strength
+        'clf__estimator__solver': ['lbfgs', 'liblinear'],  # Solvers to try
+        'clf__estimator__penalty': ['l2'],  # Regularization type
+    }
+
+    # GridSearchCV for hyperparameter tuning
+    grid_search = GridSearchCV(pipeline, param_grid, cv=5, n_jobs=-1, verbose=1)
+
+    # Train the model with hyperparameter tuning
+    grid_search.fit(X_train, y_train)
+
+    # Best hyperparameters found
+    print(f"Best hyperparameters: {grid_search.best_params_}")
+
+    # Save the best model
+    joblib.dump(grid_search.best_estimator_, 'best_model.pkl')
+    
+    return grid_search
 
 # =======================
-#    SAVE THE MODEL
+#     EVALUATE THE MODEL
 # =======================
-MODEL_PATH = 'model_v1.pkl'
-joblib.dump(pipeline, MODEL_PATH)
-print(f"Model saved to {MODEL_PATH}")
+def evaluate_model(grid_search, X_test, y_test):
+    y_pred = grid_search.predict(X_test)
+
+    # Evaluate performance
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"Accuracy: {accuracy * 100:.2f}%")
+
+    # Detailed classification report
+    print("Classification Report:\n", classification_report(y_test, y_pred))
 
 # =======================
-#   MODEL EVALUATION
-# =======================
-y_pred = pipeline.predict(X_test)
-model_accuracy = accuracy_score(y_test, y_pred) * 100
-
-print("\nModel Evaluation Report:\n", classification_report(y_test, y_pred))
-print(f"Model Accuracy: {model_accuracy:.2f}%")
-
-# =======================
-#       FLASK ROUTES
+#     FLASK APP
 # =======================
 @app.route('/')
-def home():
-    """ Renders the main HTML page. """
-    return render_template("index.html")
+def index():
+    return "Model Training and Evaluation is Complete!"
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    """ Handles prediction requests. """
     try:
-        # Extract form data and convert to float
-        values = [float(request.form[col]) for col in feature_columns]
-        
-        # Create DataFrame for model input
-        input_df = pd.DataFrame([values], columns=feature_columns)
-        
-        # Load the model
-        model = joblib.load(MODEL_PATH)
-        
-        # Make predictions
-        prediction = model.predict(input_df)[0]
-        
-        # Determine the result
-        result = "Yes" if any(prediction) else "No"
-        
-        # Return JSON response to frontend
-        return jsonify({
-            'prediction': result,
-            'accuracy': f"{model_accuracy:.2f}"
-        })
-    
-    except Exception as e:
-        print("Prediction Error:", e)
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        # Example of how to predict with the model
+        data = request.get_json()
+        model = joblib.load('best_model.pkl')
+        # You would need to extract features from `data` and predict.
+        prediction = model.predict(data)
+        return jsonify(prediction.tolist())
 
-# =======================
-#   RUN THE APPLICATION
-# =======================
+    except Exception as e:
+        return jsonify({"error": str(e), "trace": traceback.format_exc()})
+
+def main():
+    # Step 1: Clean and split data
+    X_train, X_test, y_train, y_test = clean_and_split_data()
+
+    # Step 2: Train the model
+    grid_search = train_model(X_train, y_train)
+
+    # Step 3: Evaluate the model
+    evaluate_model(grid_search, X_test, y_test)
+
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    main()  # Call main function to run model training and evaluation
+    app.run(debug=True)  # Start Flask app
+
