@@ -1,16 +1,19 @@
 import pandas as pd
 import numpy as np
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
-from flask import Flask, request, render_template, jsonify
 import traceback
 
+# Initialize Flask App
 app = Flask(__name__)
+CORS(app)  # Enable CORS
 
 # =======================
 #       LOAD DATA
@@ -48,16 +51,16 @@ def clean_and_split_data():
 def train_model(X_train, y_train):
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
-        ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000)))
+        ('clf', MultiOutputClassifier(GradientBoostingClassifier(n_estimators=100, random_state=42)))
     ])
 
     # =======================
     #     HYPERPARAMETER TUNING
     # =======================
     param_grid = {
-        'clf__estimator__C': [0.01, 0.1, 1, 10],  # Regularization strength
-        'clf__estimator__solver': ['lbfgs', 'liblinear'],  # Solvers to try
-        'clf__estimator__penalty': ['l2'],  # Regularization type
+        'clf__estimator__n_estimators': [100, 200, 300],
+        'clf__estimator__learning_rate': [0.01, 0.1, 0.2],
+        'clf__estimator__max_depth': [3, 5, 7],
     }
 
     # GridSearchCV for hyperparameter tuning
@@ -97,12 +100,11 @@ def index():
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Example of how to predict with the model
-        data = request.get_json()
-        model = joblib.load('best_model.pkl')
-        # You would need to extract features from `data` and predict.
-        prediction = model.predict(data)
-        return jsonify(prediction.tolist())
+        data = request.get_json()  # Get JSON data from the request
+        model = joblib.load('best_model.pkl')  # Load the trained model
+        # Assume data needs to be formatted as a list of features
+        prediction = model.predict([data['features']])
+        return jsonify(prediction.tolist())  # Return the prediction as JSON
 
     except Exception as e:
         return jsonify({"error": str(e), "trace": traceback.format_exc()})
@@ -118,6 +120,7 @@ def main():
     evaluate_model(grid_search, X_test, y_test)
 
 if __name__ == '__main__':
-    main()  # Call main function to run model training and evaluation
-    app.run(debug=True)  # Start Flask app
+    main()  # Train the model
+    app.run(debug=True, host='0.0.0.0', port=5000)  # Run Flask app
+
 
