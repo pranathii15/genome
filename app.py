@@ -1,9 +1,9 @@
 import pandas as pd
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import classification_report, accuracy_score
 import joblib
 from flask import Flask, request, render_template, jsonify
@@ -52,23 +52,30 @@ X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, 
 # =======================
 pipeline = Pipeline([
     ('scaler', StandardScaler()),
-    ('clf', MultiOutputClassifier(LogisticRegression(max_iter=1000)))
+    ('clf', MultiOutputClassifier(GradientBoostingClassifier()))
 ])
 
-# Train the model
-pipeline.fit(X_train, y_train)
+# Hyperparameter Tuning
+param_grid = {
+    'clf__estimator__n_estimators': [100, 150],
+    'clf__estimator__learning_rate': [0.01, 0.1, 0.2],
+    'clf__estimator__max_depth': [3, 5, 7]
+}
+
+grid_search = GridSearchCV(pipeline, param_grid, cv=3, scoring='accuracy', n_jobs=-1, verbose=2)
+grid_search.fit(X_train, y_train)
 
 # =======================
 #    SAVE THE MODEL
 # =======================
-MODEL_PATH = 'model_v1.pkl'
-joblib.dump(pipeline, MODEL_PATH)
+MODEL_PATH = 'model_v2.pkl'
+joblib.dump(grid_search.best_estimator_, MODEL_PATH)
 print(f"Model saved to {MODEL_PATH}")
 
 # =======================
 #   MODEL EVALUATION
 # =======================
-y_pred = pipeline.predict(X_test)
+y_pred = grid_search.best_estimator_.predict(X_test)
 model_accuracy = accuracy_score(y_test, y_pred) * 100
 
 print("\nModel Evaluation Report:\n", classification_report(y_test, y_pred))
@@ -118,6 +125,7 @@ def predict():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port, debug=True)
+
 
 
 
